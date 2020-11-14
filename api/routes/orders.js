@@ -8,13 +8,14 @@ const mongoose = require('mongoose');
 router.get('/', (req, res, next) =>{
     Order.find()
     .select('_id product quantity')
+    .populate('product', '_id name')
     .then(orders =>{
         res.status(200).json({
             count: orders.length,
             orders: orders.map(order =>{
                 return {
                     id: order._id,
-                    productId: order.product,
+                    product: order.product,
                     quantity: order.quantity,
                     request: {
                         type: 'GET',
@@ -70,12 +71,13 @@ router.post('/', (req, res, next) =>{
 router.get('/:orderId', (req, res, next) =>{
     Order.findById(req.params.orderId)
     .select('_id product quantity')
+    .populate('product', '_id name')
     .then(order =>{
         if(order){
             res.status(200).json({
                 order: {
                     id: order._id,
-                    productId: order.product,
+                    product: order.product,
                     quantity: order.quantity,
                 },
                 request: {
