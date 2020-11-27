@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const User = require('../entity/user');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const jwt = require('jsonwebtoken');
 
 router.post('/signup', (req, res, next) =>{
     const email = req.body.email;
@@ -42,6 +43,45 @@ router.post('/signup', (req, res, next) =>{
             });
         }
     }).catch();
+});
+
+router.post('/login', (req, res, next) =>{
+    User.find({email: req.body.email})
+    .then(user =>{
+        if(user.length < 1){
+            return res.status(401).json({
+                message: 'Invalid Credentials!'
+            });
+        }
+        bcrypt.compare(req.body.password, user[0].password, (err, result) =>{
+            if(err){
+                return res.status(401).json({
+                    message: 'Invalid Credentials!'
+                });
+            }
+            if(result){
+                const token = jwt.sign({
+                    email: user[0].email,
+                    id: user[0]._id
+                },
+                process.env.JWT_SECRET_KEY,
+                {
+                    expiresIn: "1h"
+                });
+                return res.status(200).json({
+                    message: 'Authentication succeeded!',
+                    token: token
+                });
+            }
+            return res.status(401).json({
+                message: 'Invalid Credentials!'
+            });
+        });
+    })
+    .catch(err =>{
+        console.error(err);
+        res.status(500).json({error: err});
+    });
 });
 
 router.delete('/:userId', (req, res, next) =>{
